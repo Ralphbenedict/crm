@@ -1,38 +1,38 @@
-const { Customer, CustomerAddress, CustomerContact, Order } = require('../models');
-const { Op, sequelize } = require('../config/database');
+const { Customer } = require('../models');
+const { Order } = require('../models');
 
 class CustomerController {
     static async index(req, res) {
         try {
             console.log('CustomerController.index: Starting to fetch customers');
-            const customers = await Customer.findAll({
-                include: [
-                    {
-                        model: CustomerAddress,
-                        as: 'addresses',
-                        where: { isDefault: true },
-                        required: false
-                    },
-                    {
-                        model: CustomerContact,
-                        as: 'contacts',
-                        where: { isPrimary: true },
-                        required: false
-                    },
-                    {
-                        model: Order,
-                        as: 'orders',
-                        required: false,
-                        attributes: ['id', 'totalAmount', 'statusId']
-                    }
-                ],
-                order: [['name', 'ASC']]
-            });
-            console.log('CustomerController.index: Fetched customers:', customers.length);
+            console.log('CustomerController.index: Success message from query:', req.query.success);
+
+            const customers = await Customer.find()
+                .sort({ name: 1 });
+
+            console.log('CustomerController.index: Found customers:', customers.length);
+
+            // Get order counts for each customer
+            const customersWithOrders = await Promise.all(customers.map(async (customer) => {
+                const customerObj = customer.toObject();
+                // Find orders where customerName matches the customer's name
+                const orders = await Order.find({
+                    customerName: customer.name,
+                    deletedAt: null // Only count non-deleted orders
+                });
+
+                customerObj.totalOrders = orders.length;
+                customerObj.pendingOrders = orders.filter(order => order.statusId === 'pending').length;
+                return customerObj;
+            }));
+
+            console.log('CustomerController.index: Fetched customers with orders:', customersWithOrders.length);
+            console.log('CustomerController.index: First customer sample:', customersWithOrders.length > 0 ? JSON.stringify(customersWithOrders[0]) : 'No customers');
 
             res.render('customers/index', {
                 title: 'Customers',
-                customers: customers || []
+                customers: customersWithOrders || [],
+                success: req.query.success || null
             });
         } catch (error) {
             console.error('Error fetching customers:', error);
@@ -48,27 +48,7 @@ class CustomerController {
 
     static async show(req, res) {
         try {
-            const customer = await Customer.findByPk(req.params.id, {
-                include: [
-                    {
-                        model: CustomerAddress,
-                        as: 'addresses',
-                        required: false
-                    },
-                    {
-                        model: CustomerContact,
-                        as: 'contacts',
-                        required: false
-                    },
-                    {
-                        model: Order,
-                        as: 'orders',
-                        required: false,
-                        include: ['status']
-                    }
-                ]
-            });
-
+            const customer = await Customer.findById(req.params.id);
             if (!customer) {
                 return res.status(404).render('error', {
                     title: 'Not Found',
@@ -76,9 +56,14 @@ class CustomerController {
                 });
             }
 
+            // Get customer's orders
+            const orders = await Order.find({ customerName: customer.name })
+                .sort('-createdAt');
+
             res.render('customers/show', {
                 title: customer.name,
-                customer
+                customer,
+                orders
             });
         } catch (error) {
             console.error('Error fetching customer:', error);
@@ -92,50 +77,44 @@ class CustomerController {
 
     static async create(req, res) {
         try {
-            console.log('Accessing customer create route');
+            console.log('CustomerController.create: Accessing customer create route');
             res.render('customers/form', {
                 title: 'New Customer',
                 customer: null,
-                error: null,
-                success: null,
+                error: req.flash('error'),
+                success: req.flash('success'),
                 formData: req.body // Preserve form data in case of validation errors
             });
         } catch (error) {
-            console.error('Error rendering customer form:', error);
-            res.status(500).render('customers/form', {
-                title: 'New Customer',
-                customer: null,
-                error: {
-                    message: 'Failed to load customer form'
-                },
-                success: null,
-                formData: req.body
-            });
+            console.error('CustomerController.create: Error rendering customer form:', error);
+            req.flash('error', 'Failed to load customer form');
+            res.redirect('/customers');
         }
     }
 
     static async store(req, res) {
         try {
+            console.log('CustomerController.store: Starting to create customer');
+            console.log('CustomerController.store: Received form data:', req.body);
+
+            // Extract data from request body
             const {
                 name,
                 tin,
-                customerSince,
-                status,
-                // Address fields
+                phoneNumber,
+                suite,
                 streetAddress,
                 city,
-                state,
-                postalCode,
-                country,
-                // Contact fields
-                contactName,
-                contactPosition,
-                contactEmail,
-                contactPhone
+                postalCode
             } = req.body;
+
+            console.log('CustomerController.store: Extracted data:', {
+                name, tin, phoneNumber, suite, streetAddress, city, postalCode
+            });
 
             // Basic Information Validation
             if (!name || name.length < 2 || name.length > 100) {
+                console.log('CustomerController.store: Name validation failed');
                 return res.render('customers/form', {
                     title: 'New Customer',
                     customer: null,
@@ -148,20 +127,25 @@ class CustomerController {
             }
 
             // TIN Validation (if provided)
-            if (tin && !tin.match(/^\d{3}-\d{3}-\d{3}$/)) {
-                return res.render('customers/form', {
-                    title: 'New Customer',
-                    customer: null,
-                    error: {
-                        message: 'Please enter a valid TIN in the format: 123-456-789'
-                    },
-                    success: null,
-                    formData: req.body
-                });
+            if (tin) {
+                // Remove any non-digit characters
+                const cleanTin = tin.replace(/\D/g, '');
+
+                // Check if we have exactly 9 digits
+                if (cleanTin.length !== 9) {
+                    console.log('CustomerController.store: TIN validation failed - incorrect length');
+                    req.flash('error', 'Please enter a valid 9-digit TIN');
+                    return res.redirect('/customers/create');
+                }
+
+                // Format the TIN as XXX-XXX-XXX
+                const formattedTin = `${cleanTin.slice(0, 3)}-${cleanTin.slice(3, 6)}-${cleanTin.slice(6, 9)}`;
+                req.body.tin = formattedTin; // Update the TIN in the request body
             }
 
             // Address Validation
-            if (!streetAddress || !city || !state || !postalCode) {
+            if (!streetAddress || !city || !postalCode) {
+                console.log('CustomerController.store: Address validation failed');
                 return res.render('customers/form', {
                     title: 'New Customer',
                     customer: null,
@@ -175,6 +159,7 @@ class CustomerController {
 
             // Postal Code Validation
             if (!postalCode.match(/^\d{4}$/)) {
+                console.log('CustomerController.store: Postal code validation failed');
                 return res.render('customers/form', {
                     title: 'New Customer',
                     customer: null,
@@ -186,107 +171,50 @@ class CustomerController {
                 });
             }
 
-            // Contact Validation
-            if (!contactName || contactName.length < 2 || contactName.length > 100) {
-                return res.render('customers/form', {
-                    title: 'New Customer',
-                    customer: null,
-                    error: {
-                        message: 'Please enter a valid contact name (2-100 characters)'
-                    },
-                    success: null,
-                    formData: req.body
-                });
-            }
-
-            // Email Validation (if provided)
-            if (contactEmail && !contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                return res.render('customers/form', {
-                    title: 'New Customer',
-                    customer: null,
-                    error: {
-                        message: 'Please enter a valid email address'
-                    },
-                    success: null,
-                    formData: req.body
-                });
-            }
-
-            // Create customer with transaction
-            const result = await sequelize.transaction(async (t) => {
-                // Create customer
-                const customer = await Customer.create({
-                    name,
-                    tin,
-                    customerSince: customerSince || new Date(),
-                    status: status || 'active'
-                }, { transaction: t });
-
-                // Create default address
-                await CustomerAddress.create({
-                    customerId: customer.id,
-                    addressType: 'main',
+            // Create customer with simplified structure
+            console.log('CustomerController.store: Creating new customer');
+            const customer = new Customer({
+                name,
+                tin,
+                customerSince: new Date(),
+                status: 'active',
+                address: {
                     streetAddress,
                     city,
-                    state,
+                    state: 'N/A', // Default value
                     postalCode,
-                    country: country || 'Philippines',
-                    isDefault: true
-                }, { transaction: t });
-
-                // Create primary contact
-                await CustomerContact.create({
-                    customerId: customer.id,
-                    name: contactName,
-                    position: contactPosition,
-                    email: contactEmail,
-                    phone: contactPhone,
-                    isPrimary: true
-                }, { transaction: t });
-
-                return customer;
+                    country: 'Philippines'
+                },
+                contact: {
+                    name: name, // Use customer name as contact name
+                    position: 'N/A',
+                    email: '',
+                    phone: phoneNumber || ''
+                }
             });
 
-            // Redirect with success message
+            console.log('CustomerController.store: Customer object created:', customer);
+
+            console.log('CustomerController.store: Saving customer');
+            await customer.save();
+            console.log('CustomerController.store: Customer saved successfully');
+
+            // Set flash message and redirect
+            console.log('CustomerController.store: Setting success flash message');
             req.flash('success', 'Customer created successfully');
+            console.log('CustomerController.store: Redirecting to customers list');
             res.redirect('/customers');
         } catch (error) {
-            console.error('Error creating customer:', error);
+            console.error('CustomerController.store: Error creating customer:', error);
 
             // Handle specific database errors
-            if (error.name === 'SequelizeUniqueConstraintError') {
-                return res.render('customers/form', {
-                    title: 'New Customer',
-                    customer: null,
-                    error: {
-                        message: 'A customer with this name or TIN already exists'
-                    },
-                    success: null,
-                    formData: req.body
-                });
+            if (error.code === 11000) { // MongoDB duplicate key error
+                req.flash('error', 'A customer with this name or TIN already exists');
+                return res.redirect('/customers/create');
             }
 
-            if (error.name === 'SequelizeValidationError') {
-                return res.render('customers/form', {
-                    title: 'New Customer',
-                    customer: null,
-                    error: {
-                        message: 'Please check your input and try again'
-                    },
-                    success: null,
-                    formData: req.body
-                });
-            }
-
-            res.render('customers/form', {
-                title: 'New Customer',
-                customer: null,
-                error: {
-                    message: 'An error occurred while creating the customer. Please try again.'
-                },
-                success: null,
-                formData: req.body
-            });
+            req.flash('error', 'An error occurred while creating the customer. Please try again.');
+            res.redirect('/customers/create');
         }
     }
 
