@@ -1,0 +1,176 @@
+<%- include('../partials/header') %>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h2>Order Details: <%= order.siNumber %>
+                        </h2>
+                        <div>
+                            <a href="/orders/<%= order.id %>/edit" class="btn btn-warning">Edit</a>
+                            <a href="/orders" class="btn btn-secondary">Back to Orders</a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <h4>Order Information</h4>
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>SI Number:</th>
+                                        <td>
+                                            <%= order.siNumber %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Order Date:</th>
+                                        <td>
+                                            <%= new Date(order.orderDate).toLocaleDateString() %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Invoice Date:</th>
+                                        <td>
+                                            <%= order.invoiceDate ? new Date(order.invoiceDate).toLocaleDateString()
+                                                : 'Not set' %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td>
+                                            <span class="badge bg-<%= getStatusColor(order.status.name) %>">
+                                                <%= order.status.name %>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Customer Information</h4>
+                                <table class="table table-bordered">
+                                    <tr>
+                                        <th>Customer Name:</th>
+                                        <td>
+                                            <%= order.customerName %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Total Amount:</th>
+                                        <td>₱<%= order.totalAmount.toLocaleString() %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Withholding Tax:</th>
+                                        <td>₱<%= order.withholdingTax ? order.withholdingTax.toLocaleString() : '0.00'
+                                                %>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h4>Proof of Payment</h4>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">Proof of Payment (1)</div>
+                                            <div class="card-body">
+                                                <% if (order.proofOfPayment1) { %>
+                                                    <% if (order.proofOfPayment1.match(/\.(jpg|jpeg|png|gif)$/i)) { %>
+                                                        <img src="/uploads/<%= order.proofOfPayment1 %>"
+                                                            class="img-fluid" alt="Proof of Payment 1">
+                                                        <% } else { %>
+                                                            <a href="/uploads/<%= order.proofOfPayment1 %>"
+                                                                class="btn btn-primary" target="_blank">View PDF</a>
+                                                            <% } %>
+                                                                <% } else { %>
+                                                                    <p class="text-muted">No proof of payment uploaded
+                                                                    </p>
+                                                                    <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">Proof of Payment (2)</div>
+                                            <div class="card-body">
+                                                <% if (order.proofOfPayment2) { %>
+                                                    <% if (order.proofOfPayment2.match(/\.(jpg|jpeg|png|gif)$/i)) { %>
+                                                        <img src="/uploads/<%= order.proofOfPayment2 %>"
+                                                            class="img-fluid" alt="Proof of Payment 2">
+                                                        <% } else { %>
+                                                            <a href="/uploads/<%= order.proofOfPayment2 %>"
+                                                                class="btn btn-primary" target="_blank">View PDF</a>
+                                                            <% } %>
+                                                                <% } else { %>
+                                                                    <p class="text-muted">No proof of payment uploaded
+                                                                    </p>
+                                                                    <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Notes</h4>
+                                <% if (order.notes && order.notes.length> 0) { %>
+                                    <div class="list-group mb-3">
+                                        <% order.notes.forEach(note=> { %>
+                                            <div class="list-group-item">
+                                                <div class="d-flex w-100 justify-content-between">
+                                                    <small class="text-muted">
+                                                        <%= new Date(note.createdAt).toLocaleString() %>
+                                                    </small>
+                                                </div>
+                                                <p class="mb-1">
+                                                    <%= note.note %>
+                                                </p>
+                                            </div>
+                                            <% }); %>
+                                    </div>
+                                    <% } else { %>
+                                        <p class="text-muted">No notes added yet</p>
+                                        <% } %>
+
+                                            <div class="card">
+                                                <div class="card-header">Add New Note</div>
+                                                <div class="card-body">
+                                                    <form action="/orders/<%= order.id %>/notes" method="POST">
+                                                        <div class="mb-3">
+                                                            <textarea class="form-control" name="note" rows="3"
+                                                                required></textarea>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-primary">Add Note</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>
+
+        <script>
+            function getStatusColor(status) {
+                const statusColors = {
+                    'Fully Paid': 'success',
+                    'Paid': 'primary',
+                    'BIR 2307': 'info',
+                    'Unpaid': 'warning',
+                    'Cancelled': 'danger',
+                    'Month': 'secondary',
+                    'Bad Debts': 'dark'
+                };
+                return statusColors[status] || 'secondary';
+            }
+        </script>

@@ -1,0 +1,240 @@
+<%- include('../partials/header') %>
+
+    <!-- Add Orders-specific CSS -->
+    <link rel="stylesheet" href="/css/orders.css">
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2 class="mb-0">
+                            <%= order ? 'Edit Order' : 'Create New Order' %>
+                        </h2>
+                    </div>
+                    <div class="card-body">
+                        <form id="orderForm" action="<%= order ? `/orders/${order.id}` : '/orders' %>" method="POST"
+                            enctype="multipart/form-data" class="needs-validation" novalidate>
+
+                            <!-- Progress Indicator -->
+                            <div class="progress mb-4" style="height: 4px;">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+
+                            <!-- Basic Information Section -->
+                            <div class="form-section" data-section="basic">
+                                <h4 class="mb-3">Basic Information</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="siNumber" name="siNumber"
+                                                value="<%= order ? order.siNumber : '' %>" required
+                                                pattern="^[A-Za-z0-9\s-]+$">
+                                            <label for="siNumber">SI Number</label>
+                                            <div class="invalid-feedback">
+                                                Please enter a valid SI number
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="customerName"
+                                                name="customerName" value="<%= order ? order.customerName : '' %>"
+                                                required>
+                                            <label for="customerName">Customer Name</label>
+                                            <div class="invalid-feedback">
+                                                Please enter a customer name
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dates Section -->
+                            <div class="form-section mt-4" data-section="dates">
+                                <h4 class="mb-3">Order Dates</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="date" class="form-control" id="orderDate" name="orderDate"
+                                                value="<%= order ? order.orderDate.toISOString().split('T')[0] : '' %>"
+                                                required>
+                                            <label for="orderDate">Order Date</label>
+                                            <div class="invalid-feedback">
+                                                Please select an order date
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="date" class="form-control" id="invoiceDate" name="invoiceDate"
+                                                value="<%= order && order.invoiceDate ? order.invoiceDate.toISOString().split('T')[0] : '' %>">
+                                            <label for="invoiceDate">Invoice Date</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Financial Information Section -->
+                            <div class="form-section mt-4" data-section="financial">
+                                <h4 class="mb-3">Financial Information</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="totalAmount" name="totalAmount"
+                                                value="<%= order ? order.totalAmount : '' %>" required
+                                                pattern="^\d+(\.\d{1,2})?$">
+                                            <label for="totalAmount">Total Amount (₱)</label>
+                                            <div class="invalid-feedback">
+                                                Please enter a valid amount
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="text" class="form-control" id="withholdingTax"
+                                                name="withholdingTax"
+                                                value="<%= order && order.withholdingTax ? order.withholdingTax : '' %>"
+                                                pattern="^\d+(\.\d{1,2})?$">
+                                            <label for="withholdingTax">Withholding Tax (₱)</label>
+                                            <div class="invalid-feedback">
+                                                Please enter a valid amount
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Status Section -->
+                            <div class="form-section mt-4" data-section="status">
+                                <h4 class="mb-3">Order Status</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select" id="statusId" name="statusId" required>
+                                                <option value="">Select Status</option>
+                                                <% orderStatuses.forEach(status=> { %>
+                                                    <option value="<%= status.id %>" <%=order &&
+                                                        order.statusId===status.id ? 'selected' : '' %>>
+                                                        <%= status.name %>
+                                                    </option>
+                                                    <% }); %>
+                                            </select>
+                                            <label for="statusId">Status</label>
+                                            <div class="invalid-feedback">
+                                                Please select a status
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Documents Section -->
+                            <div class="form-section mt-4" data-section="documents">
+                                <h4 class="mb-3">Documents</h4>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="proofOfPayment1" class="form-label">Proof of Payment (1)</label>
+                                        <div class="upload-container">
+                                            <div class="upload-area" id="uploadArea1">
+                                                <input type="file" class="file-input" id="proofOfPayment1"
+                                                    name="proofOfPayment1" accept="image/*,.pdf" hidden>
+                                                <div class="upload-content">
+                                                    <i class="bi bi-cloud-upload"></i>
+                                                    <p>Drag & drop or click to upload</p>
+                                                    <small class="text-muted">Supports images and PDFs</small>
+                                                </div>
+                                            </div>
+                                            <div class="file-preview" id="filePreview1">
+                                                <% if (order && order.proofOfPayment1) { %>
+                                                    <div class="preview-item">
+                                                        <% if (order.proofOfPayment1.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                                                            %>
+                                                            <img src="/uploads/<%= order.proofOfPayment1 %>"
+                                                                alt="Proof of Payment 1">
+                                                            <% } else { %>
+                                                                <i class="bi bi-file-pdf"></i>
+                                                                <span>
+                                                                    <%= order.proofOfPayment1 %>
+                                                                </span>
+                                                                <% } %>
+                                                                    <button type="button" class="btn-remove"
+                                                                        title="Remove file">
+                                                                        <i class="bi bi-x-circle"></i>
+                                                                    </button>
+                                                    </div>
+                                                    <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="proofOfPayment2" class="form-label">Proof of Payment (2)</label>
+                                        <div class="upload-container">
+                                            <div class="upload-area" id="uploadArea2">
+                                                <input type="file" class="file-input" id="proofOfPayment2"
+                                                    name="proofOfPayment2" accept="image/*,.pdf" hidden>
+                                                <div class="upload-content">
+                                                    <i class="bi bi-cloud-upload"></i>
+                                                    <p>Drag & drop or click to upload</p>
+                                                    <small class="text-muted">Supports images and PDFs</small>
+                                                </div>
+                                            </div>
+                                            <div class="file-preview" id="filePreview2">
+                                                <% if (order && order.proofOfPayment2) { %>
+                                                    <div class="preview-item">
+                                                        <% if (order.proofOfPayment2.match(/\.(jpg|jpeg|png|gif)$/i)) {
+                                                            %>
+                                                            <img src="/uploads/<%= order.proofOfPayment2 %>"
+                                                                alt="Proof of Payment 2">
+                                                            <% } else { %>
+                                                                <i class="bi bi-file-pdf"></i>
+                                                                <span>
+                                                                    <%= order.proofOfPayment2 %>
+                                                                </span>
+                                                                <% } %>
+                                                                    <button type="button" class="btn-remove"
+                                                                        title="Remove file">
+                                                                        <i class="bi bi-x-circle"></i>
+                                                                    </button>
+                                                    </div>
+                                                    <% } %>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Notes Section -->
+                            <div class="form-section mt-4" data-section="notes">
+                                <h4 class="mb-3">Additional Notes</h4>
+                                <div class="form-floating">
+                                    <textarea class="form-control" id="notes" name="notes"
+                                        style="height: 100px"></textarea>
+                                    <label for="notes">Notes</label>
+                                </div>
+                            </div>
+
+                            <!-- Form Navigation -->
+                            <div class="d-flex justify-content-between mt-4">
+                                <div>
+                                    <a href="/orders" class="btn btn-outline-secondary">
+                                        <i class="bi bi-arrow-left"></i> Cancel
+                                    </a>
+                                </div>
+                                <div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <%= order ? 'Update Order' : 'Create Order' %>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Orders-specific JavaScript -->
+    <script src="/js/orders.js"></script>
+
+    <%- include('../partials/footer') %>

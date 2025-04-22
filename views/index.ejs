@@ -11,27 +11,90 @@
 </head>
 
 <body>
-    <header>
-        <h1>Welcome to CRM</h1>
-        <nav>
-            <ul>
-                <li><a href="/">Home</a></li>
-                <li><a href="/customers">Customers</a></li>
-                <li><a href="/contacts">Contacts</a></li>
-            </ul>
-        </nav>
-    </header>
+    <%- include('partials/header') %>
 
-    <main>
-        <section class="hero">
-            <h2>Manage Your Customer Relationships</h2>
-            <p>Welcome to your CRM dashboard. Get started by exploring the features below.</p>
-        </section>
-    </main>
+        <div class="container mt-5">
+            <div class="jumbotron">
+                <h1 class="display-4">Welcome to CRM System</h1>
+                <p class="lead">Manage your orders, track customer information, and calculate costs efficiently.</p>
+                <hr class="my-4">
+                <p>Get started by creating a new order or viewing existing ones.</p>
+                <a class="btn btn-primary btn-lg" href="/orders" role="button">View Orders</a>
+                <a class="btn btn-success btn-lg" href="/orders/create" role="button">Create Order</a>
+            </div>
 
-    <footer>
-        <p>&copy; <%= new Date().getFullYear() %> CRM System. All rights reserved.</p>
-    </footer>
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Order Management</h5>
+                            <p class="card-text">Create, view, and manage orders with ease. Track order status and
+                                customer information.</p>
+                            <a href="/orders" class="btn btn-primary">Manage Orders</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Cost Calculator</h5>
+                            <p class="card-text">Calculate costs for laser engraving and cutting services. Manage
+                                materials and pricing.</p>
+                            <a href="/cost-calculator" class="btn btn-primary">Calculate Costs</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <%- include('partials/footer') %>
+
+            <script>
+                async function sendMessage() {
+                    const input = document.getElementById('user-input');
+                    const message = input.value.trim();
+                    if (!message) return;
+
+                    // Add user message to chat
+                    addMessage('user', message);
+                    input.value = '';
+
+                    try {
+                        const response = await fetch('/api/ai/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ message }),
+                        });
+
+                        const data = await response.json();
+                        if (data.success) {
+                            addMessage('ai', data.response);
+                        } else {
+                            addMessage('error', 'Failed to get response from AI');
+                        }
+                    } catch (error) {
+                        addMessage('error', 'Error communicating with the server');
+                    }
+                }
+
+                function addMessage(type, content) {
+                    const messagesDiv = document.getElementById('chat-messages');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${type}-message`;
+                    messageDiv.textContent = content;
+                    messagesDiv.appendChild(messageDiv);
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                }
+
+                // Allow Enter key to send message
+                document.getElementById('user-input').addEventListener('keypress', function (e) {
+                    if (e.key === 'Enter') {
+                        sendMessage();
+                    }
+                });
+            </script>
 </body>
 
 </html>

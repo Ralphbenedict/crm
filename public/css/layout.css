@@ -1,0 +1,38 @@
+/* Main content area spacing */
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+    padding-bottom: 5rem;
+    /* Increased padding to prevent overlap */
+}
+
+/* Form and button container spacing */
+form,
+.button-container {
+    margin-bottom: 5rem;
+    /* Increased margin for better spacing */
+}
+
+/* Footer positioning */
+footer {
+    margin-top: auto;
+    height: 3.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    main {
+        padding-bottom: 6rem;
+        /* Even more padding on mobile */
+    }
+
+    form,
+    .button-container {
+        margin-bottom: 6rem;
+    }
+}

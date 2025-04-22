@@ -1,0 +1,212 @@
+<%- include('../partials/header') %>
+
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <h2>
+                    <%= customer.name %>
+                </h2>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/customers/<%= customer.id %>/edit" class="btn btn-warning">
+                    <i class="bi bi-pencil"></i> Edit Customer
+                </a>
+                <a href="/customers" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Customer Information -->
+            <div class="col-md-4">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Customer Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <th>TIN:</th>
+                                <td>
+                                    <%= customer.tin || 'N/A' %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Customer Since:</th>
+                                <td>
+                                    <%= new Date(customer.customerSince).toLocaleDateString() %>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th>Status:</th>
+                                <td>
+                                    <span class="badge bg-<%= customer.status === 'active' ? 'success' : 'danger' %>">
+                                        <%= customer.status %>
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Primary Contact -->
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Primary Contact</h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (customer.CustomerContacts && customer.CustomerContacts.length> 0) { %>
+                            <% const primaryContact=customer.CustomerContacts.find(contact=> contact.isPrimary) %>
+                                <% if (primaryContact) { %>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <th>Name:</th>
+                                            <td>
+                                                <%= primaryContact.name %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Position:</th>
+                                            <td>
+                                                <%= primaryContact.position || 'N/A' %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Email:</th>
+                                            <td>
+                                                <% if (primaryContact.email) { %>
+                                                    <a href="mailto:<%= primaryContact.email %>">
+                                                        <%= primaryContact.email %>
+                                                    </a>
+                                                    <% } else { %>
+                                                        N/A
+                                                        <% } %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th>Phone:</th>
+                                            <td>
+                                                <% if (primaryContact.phone) { %>
+                                                    <a href="tel:<%= primaryContact.phone %>">
+                                                        <%= primaryContact.phone %>
+                                                    </a>
+                                                    <% } else { %>
+                                                        N/A
+                                                        <% } %>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <% } else { %>
+                                        <p class="text-muted">No primary contact set</p>
+                                        <% } %>
+                                            <% } else { %>
+                                                <p class="text-muted">No contacts added</p>
+                                                <% } %>
+                    </div>
+                </div>
+
+                <!-- Default Address -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Default Address</h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (customer.CustomerAddresses && customer.CustomerAddresses.length> 0) { %>
+                            <% const defaultAddress=customer.CustomerAddresses.find(addr=> addr.isDefault) %>
+                                <% if (defaultAddress) { %>
+                                    <address>
+                                        <%= defaultAddress.streetAddress %><br>
+                                            <%= defaultAddress.city %>, <%= defaultAddress.state %>
+                                                    <%= defaultAddress.postalCode %><br>
+                                                        <%= defaultAddress.country %>
+                                    </address>
+                                    <% } else { %>
+                                        <p class="text-muted">No default address set</p>
+                                        <% } %>
+                                            <% } else { %>
+                                                <p class="text-muted">No addresses added</p>
+                                                <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Orders -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Orders</h5>
+                        <a href="/orders/create?customerId=<%= customer.id %>" class="btn btn-light btn-sm">
+                            <i class="bi bi-plus-circle"></i> New Order
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        <% if (customer.Orders && customer.Orders.length> 0) { %>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>SI Number</th>
+                                            <th>Date</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% customer.Orders.forEach(order=> { %>
+                                            <tr>
+                                                <td>
+                                                    <%= order.siNumber %>
+                                                </td>
+                                                <td>
+                                                    <%= new Date(order.orderDate).toLocaleDateString() %>
+                                                </td>
+                                                <td>₱<%= parseFloat(order.totalAmount).toLocaleString() %>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-<%= getStatusColor(order.status.name) %>">
+                                                        <%= order.status.name %>
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="/orders/<%= order.id %>" class="btn btn-sm btn-info">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        <a href="/orders/<%= order.id %>/edit"
+                                                            class="btn btn-sm btn-warning">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <% } else { %>
+                                <p class="text-muted">No orders found for this customer</p>
+                                <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>
+
+        <script>
+            function getStatusColor(status) {
+                const statusColors = {
+                    'Fully Paid': 'success',
+                    'Paid': 'primary',
+                    'BIR 2307': 'info',
+                    'Unpaid': 'warning',
+                    'Cancelled': 'danger',
+                    'Month': 'secondary',
+                    'Bad Debts': 'dark'
+                };
+                return statusColors[status] || 'secondary';
+            }
+        </script>

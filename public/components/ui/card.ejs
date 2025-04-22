@@ -1,0 +1,26 @@
+<% const className=locals.className || '' ; %>
+
+    <div class="rounded-lg border bg-card text-card-foreground shadow-sm <%= className %>">
+        <%- body %>
+    </div>
+
+    <%# Card Header %>
+        <% if (locals.header) { %>
+            <div class="flex flex-col space-y-1.5 p-6">
+                <%- header %>
+            </div>
+            <% } %>
+
+                <%# Card Content %>
+                    <% if (locals.content) { %>
+                        <div class="p-6 pt-0">
+                            <%- content %>
+                        </div>
+                        <% } %>
+
+                            <%# Card Footer %>
+                                <% if (locals.footer) { %>
+                                    <div class="flex items-center p-6 pt-0">
+                                        <%- footer %>
+                                    </div>
+                                    <% } %>
