@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const OrderController = require('../controllers/OrderController');
 
+// Debug logging to identify undefined route handlers
+console.log('OrderController methods:', Object.keys(OrderController));
+console.log('getAllOrders:', typeof OrderController.getAllOrders);
+console.log('searchOrders:', typeof OrderController.searchOrders);
+console.log('getSearchSuggestions:', typeof OrderController.getSearchSuggestions);
+console.log('getOrderForm:', typeof OrderController.getOrderForm);
+console.log('getEditOrderForm:', typeof OrderController.getEditOrderForm);
+console.log('updateOrder:', typeof OrderController.updateOrder);
+console.log('deleteOrder:', typeof OrderController.deleteOrder);
+console.log('addNote:', typeof OrderController.addNote);
+console.log('getOrderDetails:', typeof OrderController.getOrderDetails);
+
 // Remove debug logging
 const multer = require('multer');
 const path = require('path');
