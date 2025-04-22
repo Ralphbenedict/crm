@@ -3,9 +3,20 @@ const path = require('path');
 
 // Create Sequelize instance
 const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../database.sqlite'),
-    logging: false // Set to console.log to see SQL queries
+    dialect: 'mysql',
+    host: process.env.DB_HOST || 'localhost',
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'crm_db',
+    port: process.env.DB_PORT || 3306,
+    logging: false, // Set to console.log to see SQL queries
+    dialectOptions: {
+        // For Vercel deployment
+        ssl: process.env.NODE_ENV === 'production' ? {
+            require: true,
+            rejectUnauthorized: false
+        } : false
+    }
 });
 
 // Test the connection
