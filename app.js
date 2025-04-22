@@ -17,13 +17,11 @@ const express = require('express');
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config();
-const sequelize = require('./config/database');
-const setupAssociations = require('./models/associations');
+const { connectDB } = require('./config/database');
 const orderRoutes = require('./routes/orderRoutes');
 const CostController = require('./controllers/CostController');
 const CustomerController = require('./controllers/customerController');
 const customerRoutes = require('./routes/customerRoutes');
-const { Customer } = require('./models');
 const session = require('express-session');
 const flash = require('connect-flash');
 
@@ -71,15 +69,8 @@ app.use((req, res, next) => {
     next();
 });
 
-// Initialize database
-sequelize.sync()
-    .then(() => {
-        console.log('Database synchronized successfully');
-        setupAssociations();
-    })
-    .catch(err => {
-        console.error('Error synchronizing database:', err);
-    });
+// Connect to MongoDB
+connectDB();
 
 // Route Definitions
 
