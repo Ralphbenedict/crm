@@ -65,11 +65,11 @@ const Order = sequelize.define('Order', {
 
     // Reference to the order status
     statusId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
-        references: {
-            model: 'OrderStatuses',
-            key: 'id'
+        defaultValue: 'pending',
+        validate: {
+            isIn: [['pending', 'processing', 'completed', 'cancelled']]
         }
     },
 

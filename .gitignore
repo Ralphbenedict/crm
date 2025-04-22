@@ -9,20 +9,32 @@ yarn-error.log
 .env.local
 .env.*.local
 
-# Database
-*.sqlite
-*.sqlite3
+# Build output
+dist/
+build/
 
-# Uploads
-public/uploads/*
-!public/uploads/.gitkeep
-
-# IDE
+# IDE and editor files
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# OS
 .DS_Store
-Thumbs.db 
+
+# Uploads directory
+public/uploads/*
+!public/uploads/.gitkeep
+
+# Logs
+logs/
+*.log
+
+# Testing
+coverage/
+
+# Temporary files
+tmp/
+temp/
+
+# Database
+*.sqlite
+*.sqlite3 

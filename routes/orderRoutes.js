@@ -1,20 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const OrderController = require('../controllers/OrderController');
-
-// Debug logging to identify undefined route handlers
-console.log('OrderController methods:', Object.keys(OrderController));
-console.log('getAllOrders:', typeof OrderController.getAllOrders);
-console.log('searchOrders:', typeof OrderController.searchOrders);
-console.log('getSearchSuggestions:', typeof OrderController.getSearchSuggestions);
-console.log('getOrderForm:', typeof OrderController.getOrderForm);
-console.log('getEditOrderForm:', typeof OrderController.getEditOrderForm);
-console.log('updateOrder:', typeof OrderController.updateOrder);
-console.log('deleteOrder:', typeof OrderController.deleteOrder);
-console.log('addNote:', typeof OrderController.addNote);
-console.log('getOrderDetails:', typeof OrderController.getOrderDetails);
-
-// Remove debug logging
 const multer = require('multer');
 const path = require('path');
 
@@ -39,12 +25,15 @@ router.post('/', upload.fields([
 // List route
 router.get('/', OrderController.getAllOrders);
 
-// Specific routes (no parameters)
+// Search routes
 router.get('/search', OrderController.searchOrders);
 router.get('/search-suggestions', OrderController.getSearchSuggestions);
+
+// Create order form
 router.get('/create', OrderController.getOrderForm);
 
-// Parameterized routes
+// Order details and actions
+router.get('/:id', OrderController.getOrderDetails);
 router.get('/:id/edit', OrderController.getEditOrderForm);
 router.post('/:id', upload.fields([
     { name: 'proofOfPayment1', maxCount: 1 },
@@ -52,6 +41,5 @@ router.post('/:id', upload.fields([
 ]), OrderController.updateOrder);
 router.post('/:id/delete', OrderController.deleteOrder);
 router.post('/:id/notes', OrderController.addNote);
-router.get('/:id', OrderController.getOrderDetails);
 
 module.exports = router; 

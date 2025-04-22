@@ -13,12 +13,15 @@
  * - Order notes management
  */
 
-console.log('OrderController loaded');
+const { Order, Customer } = require('../models');
 
-const Order = require('../models/Order');
-const OrderStatus = require('../models/OrderStatus');
-const OrderNote = require('../models/OrderNote');
-const { Op } = require('sequelize');
+// Define order statuses
+const orderStatuses = [
+    { id: 'pending', name: 'Pending' },
+    { id: 'processing', name: 'Processing' },
+    { id: 'completed', name: 'Completed' },
+    { id: 'cancelled', name: 'Cancelled' }
+];
 
 const OrderController = {
     /**
@@ -30,20 +33,16 @@ const OrderController = {
      */
     async getAllOrders(req, res) {
         try {
-            const orders = await Order.findAll({
-                include: [
-                    { model: OrderStatus, as: 'status' },
-                    { model: OrderNote, as: 'notes' }
-                ],
-                order: [['createdAt', 'DESC']]
-            });
+            const orders = await Order.find()
+                .populate('customerId')
+                .sort('-createdAt');
 
             // Helper function to determine status color
-            const getStatusColor = (statusName) => {
-                switch (statusName.toLowerCase()) {
+            const getStatusColor = (status) => {
+                switch (status.toLowerCase()) {
                     case 'pending':
                         return 'warning';
-                    case 'in progress':
+                    case 'processing':
                         return 'info';
                     case 'completed':
                         return 'success';
@@ -78,11 +77,12 @@ const OrderController = {
      */
     async getOrderForm(req, res) {
         try {
-            const orderStatuses = await OrderStatus.findAll();
+            const customers = await Customer.find();
             res.render('orders/form', {
                 title: 'Create Order',
-                orderStatuses,
-                order: null
+                customers,
+                order: null,
+                orderStatuses
             });
         } catch (error) {
             console.error('Error fetching order form:', error);
@@ -104,40 +104,29 @@ const OrderController = {
     async createOrder(req, res) {
         try {
             const {
-                siNumber,
-                orderDate,
-                totalAmount,
-                customerName,
-                invoiceDate,
-                statusId,
-                withholdingTax,
-                notes
+                customerId,
+                items,
+                notes,
+                statusId
             } = req.body;
 
             // Handle file uploads
-            const proofOfPayment1 = req.files && req.files.proofOfPayment1 ? req.files.proofOfPayment1[0].filename : null;
-            const proofOfPayment2 = req.files && req.files.proofOfPayment2 ? req.files.proofOfPayment2[0].filename : null;
+            const proofOfPayment1 = req.files?.proofOfPayment1?.[0]?.filename;
+            const proofOfPayment2 = req.files?.proofOfPayment2?.[0]?.filename;
+
+            // Calculate total amount from items
+            const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
 
             // Create the order
             const order = await Order.create({
-                siNumber,
-                orderDate,
+                customerId,
+                items,
                 totalAmount,
-                customerName,
-                invoiceDate: invoiceDate || null,
-                statusId,
+                statusId: statusId || 'pending',
                 proofOfPayment1,
                 proofOfPayment2,
-                withholdingTax: withholdingTax || null
+                notes: notes ? [{ content: notes }] : []
             });
-
-            // Add notes if provided
-            if (notes && notes.trim() !== '') {
-                await OrderNote.create({
-                    orderId: order.id,
-                    note: notes
-                });
-            }
 
             res.redirect('/orders');
         } catch (error) {
@@ -159,38 +148,21 @@ const OrderController = {
      */
     async searchOrders(req, res) {
         try {
-            const { query, type } = req.query;
-            let whereClause = {};
+            const { query } = req.query;
+            let filter = {};
 
             if (query) {
-                if (type === 'customer') {
-                    whereClause = {
-                        customerName: {
-                            [Op.like]: `%${query}%`
-                        }
-                    };
-                } else if (type === 'si') {
-                    whereClause = {
-                        siNumber: {
-                            [Op.like]: `%${query}%`
-                        }
-                    };
-                }
+                filter = {
+                    $or: [
+                        { orderNumber: { $regex: query, $options: 'i' } },
+                        { 'customer.name': { $regex: query, $options: 'i' } }
+                    ]
+                };
             }
 
-            const orders = await Order.findAll({
-                where: whereClause,
-                include: [
-                    { model: OrderStatus, as: 'status' },
-                    { model: OrderNote, as: 'notes' }
-                ],
-                order: [['createdAt', 'DESC']]
-            });
-
-            // Set cache control headers to prevent caching
-            res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-            res.set('Expires', '-1');
-            res.set('Pragma', 'no-cache');
+            const orders = await Order.find(filter)
+                .populate('customerId')
+                .sort('-createdAt');
 
             res.json({ success: true, orders });
         } catch (error) {
@@ -208,40 +180,17 @@ const OrderController = {
      */
     async getSearchSuggestions(req, res) {
         try {
-            const { query, type } = req.query;
-            let whereClause = {};
-            let suggestions = [];
+            const { query } = req.query;
+            const orders = await Order.find({
+                $or: [
+                    { orderNumber: { $regex: query, $options: 'i' } },
+                    { 'customer.name': { $regex: query, $options: 'i' } }
+                ]
+            })
+                .limit(5)
+                .select('orderNumber customer');
 
-            if (query) {
-                if (type === 'customer') {
-                    whereClause = {
-                        customerName: {
-                            [Op.like]: `%${query}%`
-                        }
-                    };
-                    const orders = await Order.findAll({
-                        where: whereClause,
-                        attributes: ['customerName'],
-                        group: ['customerName'],
-                        limit: 10
-                    });
-                    suggestions = orders.map(order => order.customerName);
-                } else if (type === 'si') {
-                    whereClause = {
-                        siNumber: {
-                            [Op.like]: `%${query}%`
-                        }
-                    };
-                    const orders = await Order.findAll({
-                        where: whereClause,
-                        attributes: ['siNumber'],
-                        limit: 10
-                    });
-                    suggestions = orders.map(order => order.siNumber);
-                }
-            }
-
-            res.json({ success: true, suggestions });
+            res.json({ success: true, suggestions: orders });
         } catch (error) {
             console.error('Error getting search suggestions:', error);
             res.status(500).json({ success: false, error: error.message });
@@ -257,16 +206,12 @@ const OrderController = {
      */
     async getOrderDetails(req, res) {
         try {
-            const order = await Order.findByPk(req.params.id, {
-                include: [
-                    { model: OrderStatus, as: 'status' },
-                    { model: OrderNote, as: 'notes' }
-                ]
-            });
+            const order = await Order.findById(req.params.id)
+                .populate('customerId');
 
             if (!order) {
                 return res.status(404).render('error', {
-                    title: 'Not Found',
+                    title: 'Error',
                     message: 'Order not found'
                 });
             }
@@ -294,19 +239,13 @@ const OrderController = {
      */
     async getEditOrderForm(req, res) {
         try {
-            const [order, orderStatuses] = await Promise.all([
-                Order.findByPk(req.params.id, {
-                    include: [
-                        { model: OrderStatus, as: 'status' },
-                        { model: OrderNote, as: 'notes' }
-                    ]
-                }),
-                OrderStatus.findAll()
-            ]);
+            const order = await Order.findById(req.params.id)
+                .populate('customerId');
+            const customers = await Customer.find();
 
             if (!order) {
                 return res.status(404).render('error', {
-                    title: 'Not Found',
+                    title: 'Error',
                     message: 'Order not found'
                 });
             }
@@ -314,10 +253,11 @@ const OrderController = {
             res.render('orders/form', {
                 title: 'Edit Order',
                 order,
+                customers,
                 orderStatuses
             });
         } catch (error) {
-            console.error('Error fetching edit form:', error);
+            console.error('Error fetching edit order form:', error);
             res.status(500).render('error', {
                 title: 'Error',
                 message: 'Failed to load edit form',
@@ -335,51 +275,40 @@ const OrderController = {
      */
     async updateOrder(req, res) {
         try {
-            const order = await Order.findByPk(req.params.id);
+            const {
+                customerId,
+                items,
+                notes,
+                statusId
+            } = req.body;
+
+            // Handle file uploads
+            const proofOfPayment1 = req.files?.proofOfPayment1?.[0]?.filename;
+            const proofOfPayment2 = req.files?.proofOfPayment2?.[0]?.filename;
+
+            // Calculate total amount from items
+            const totalAmount = items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+
+            const order = await Order.findById(req.params.id);
             if (!order) {
                 return res.status(404).render('error', {
-                    title: 'Not Found',
+                    title: 'Error',
                     message: 'Order not found'
                 });
             }
 
-            const {
-                siNumber,
-                orderDate,
-                totalAmount,
-                customerName,
-                invoiceDate,
-                statusId,
-                withholdingTax,
-                notes
-            } = req.body;
+            // Update order
+            order.customerId = customerId;
+            order.items = items;
+            order.totalAmount = totalAmount;
+            order.statusId = statusId;
+            if (proofOfPayment1) order.proofOfPayment1 = proofOfPayment1;
+            if (proofOfPayment2) order.proofOfPayment2 = proofOfPayment2;
+            if (notes) order.notes.push({ content: notes });
 
-            // Handle file uploads
-            const proofOfPayment1 = req.files && req.files.proofOfPayment1 ? req.files.proofOfPayment1[0].filename : order.proofOfPayment1;
-            const proofOfPayment2 = req.files && req.files.proofOfPayment2 ? req.files.proofOfPayment2[0].filename : order.proofOfPayment2;
+            await order.save();
 
-            // Update the order
-            await order.update({
-                siNumber,
-                orderDate,
-                totalAmount,
-                customerName,
-                invoiceDate: invoiceDate || null,
-                statusId,
-                proofOfPayment1,
-                proofOfPayment2,
-                withholdingTax: withholdingTax || null
-            });
-
-            // Add notes if provided
-            if (notes && notes.trim() !== '') {
-                await OrderNote.create({
-                    orderId: order.id,
-                    note: notes
-                });
-            }
-
-            res.redirect(`/orders/${order.id}`);
+            res.redirect(`/orders/${order._id}`);
         } catch (error) {
             console.error('Error updating order:', error);
             res.status(500).render('error', {
@@ -399,22 +328,20 @@ const OrderController = {
      */
     async deleteOrder(req, res) {
         try {
-            const order = await Order.findByPk(req.params.id);
+            const order = await Order.findByIdAndDelete(req.params.id);
             if (!order) {
-                return res.status(404).render('error', {
-                    title: 'Not Found',
+                return res.status(404).json({
+                    success: false,
                     message: 'Order not found'
                 });
             }
 
-            await order.destroy();
-            res.redirect('/orders');
+            res.json({ success: true });
         } catch (error) {
             console.error('Error deleting order:', error);
-            res.status(500).render('error', {
-                title: 'Error',
-                message: 'Failed to delete order',
-                error: process.env.NODE_ENV === 'development' ? error : {}
+            res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     },
@@ -428,27 +355,29 @@ const OrderController = {
      */
     async addNote(req, res) {
         try {
-            const order = await Order.findByPk(req.params.id);
+            const { content } = req.body;
+            const order = await Order.findById(req.params.id);
+
             if (!order) {
-                return res.status(404).json({ success: false, message: 'Order not found' });
+                return res.status(404).json({
+                    success: false,
+                    message: 'Order not found'
+                });
             }
 
-            const { note } = req.body;
-            if (!note || note.trim() === '') {
-                return res.status(400).json({ success: false, message: 'Note cannot be empty' });
-            }
+            order.notes.push({ content });
+            await order.save();
 
-            await OrderNote.create({
-                orderId: order.id,
-                note: note.trim()
-            });
-
-            res.json({ success: true });
+            res.json({ success: true, note: order.notes[order.notes.length - 1] });
         } catch (error) {
             console.error('Error adding note:', error);
-            res.status(500).json({ success: false, error: error.message });
+            res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
     }
 };
 
+console.log('OrderController loaded');
 module.exports = OrderController; 

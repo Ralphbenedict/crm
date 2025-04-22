@@ -16,13 +16,14 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const session = require('express-session');
+const mongoose = require('mongoose');
 require('dotenv').config();
 const { connectDB } = require('./config/database');
 const orderRoutes = require('./routes/orderRoutes');
 const CostController = require('./controllers/CostController');
 const CustomerController = require('./controllers/customerController');
 const customerRoutes = require('./routes/customerRoutes');
-const session = require('express-session');
 const flash = require('connect-flash');
 
 // Create uploads directory if it doesn't exist
@@ -44,7 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Session middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'crm-secret-key',
+    secret: process.env.SESSION_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -70,7 +71,12 @@ app.use((req, res, next) => {
 });
 
 // Connect to MongoDB
-connectDB();
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+    .then(() => console.log('MongoDB connection has been established successfully.'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Route Definitions
 
@@ -99,10 +105,10 @@ app.use('/orders', orderRoutes);
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(err.status || 500).render('error', {
+    res.status(500).render('error', {
         title: 'Error',
-        message: err.message || 'An unexpected error occurred',
-        error: err
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err : {}
     });
 });
 
@@ -118,8 +124,8 @@ app.use((req, res) => {
     });
 });
 
-// Only start the server if this file is run directly (not imported as a module)
-if (require.main === module) {
+// Start server only if not in production (Vercel)
+if (process.env.NODE_ENV !== 'production') {
     const PORT = process.env.PORT || 3001;
     app.listen(PORT, () => {
         console.log(`Server is running on http://localhost:${PORT}`);
