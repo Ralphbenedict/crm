@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const OrderController = require('../controllers/OrderController');
+
+// Debug logging
+console.log('OrderController object:', OrderController);
+console.log('OrderController methods:', Object.keys(OrderController));
+console.log('getAllOrders type:', typeof OrderController.getAllOrders);
+console.log('getAllOrders:', OrderController.getAllOrders);
+
 const multer = require('multer');
 const path = require('path');
 

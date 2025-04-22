@@ -13,12 +13,14 @@
  * - Order notes management
  */
 
+console.log('OrderController loaded');
+
 const Order = require('../models/Order');
 const OrderStatus = require('../models/OrderStatus');
 const OrderNote = require('../models/OrderNote');
 const { Op } = require('sequelize');
 
-class OrderController {
+const OrderController = {
     /**
      * Retrieve all orders with their associated status and notes
      * 
@@ -26,7 +28,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async getAllOrders(req, res) {
+    async getAllOrders(req, res) {
         try {
             const orders = await Order.findAll({
                 include: [
@@ -36,9 +38,26 @@ class OrderController {
                 order: [['createdAt', 'DESC']]
             });
 
+            // Helper function to determine status color
+            const getStatusColor = (statusName) => {
+                switch (statusName.toLowerCase()) {
+                    case 'pending':
+                        return 'warning';
+                    case 'in progress':
+                        return 'info';
+                    case 'completed':
+                        return 'success';
+                    case 'cancelled':
+                        return 'danger';
+                    default:
+                        return 'secondary';
+                }
+            };
+
             res.render('orders/index', {
                 title: 'Orders',
-                orders
+                orders,
+                getStatusColor
             });
         } catch (error) {
             console.error('Error fetching orders:', error);
@@ -48,7 +67,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Display the order creation form
@@ -57,7 +76,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async getOrderForm(req, res) {
+    async getOrderForm(req, res) {
         try {
             const orderStatuses = await OrderStatus.findAll();
             res.render('orders/form', {
@@ -73,7 +92,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Create a new order with optional file uploads and notes
@@ -82,7 +101,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async createOrder(req, res) {
+    async createOrder(req, res) {
         try {
             const {
                 siNumber,
@@ -129,7 +148,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Search orders by customer name or SI number
@@ -138,7 +157,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async searchOrders(req, res) {
+    async searchOrders(req, res) {
         try {
             const { query, type } = req.query;
             let whereClause = {};
@@ -178,7 +197,7 @@ class OrderController {
             console.error('Error searching orders:', error);
             res.status(500).json({ success: false, error: error.message });
         }
-    }
+    },
 
     /**
      * Get search suggestions for autocomplete
@@ -187,7 +206,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async getSearchSuggestions(req, res) {
+    async getSearchSuggestions(req, res) {
         try {
             const { query, type } = req.query;
             let whereClause = {};
@@ -227,7 +246,7 @@ class OrderController {
             console.error('Error getting search suggestions:', error);
             res.status(500).json({ success: false, error: error.message });
         }
-    }
+    },
 
     /**
      * Get order details by ID
@@ -236,7 +255,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async getOrderDetails(req, res) {
+    async getOrderDetails(req, res) {
         try {
             const order = await Order.findByPk(req.params.id, {
                 include: [
@@ -264,7 +283,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Display the order edit form
@@ -273,7 +292,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async getEditOrderForm(req, res) {
+    async getEditOrderForm(req, res) {
         try {
             const [order, orderStatuses] = await Promise.all([
                 Order.findByPk(req.params.id, {
@@ -305,7 +324,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Update an existing order
@@ -314,7 +333,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async updateOrder(req, res) {
+    async updateOrder(req, res) {
         try {
             const order = await Order.findByPk(req.params.id);
             if (!order) {
@@ -369,7 +388,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Delete an order
@@ -378,7 +397,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async deleteOrder(req, res) {
+    async deleteOrder(req, res) {
         try {
             const order = await Order.findByPk(req.params.id);
             if (!order) {
@@ -398,7 +417,7 @@ class OrderController {
                 error: process.env.NODE_ENV === 'development' ? error : {}
             });
         }
-    }
+    },
 
     /**
      * Add a note to an order
@@ -407,7 +426,7 @@ class OrderController {
      * @param {Object} res - Express response object
      * @returns {Promise<void>}
      */
-    static async addNote(req, res) {
+    async addNote(req, res) {
         try {
             const order = await Order.findByPk(req.params.id);
             if (!order) {
@@ -430,6 +449,6 @@ class OrderController {
             res.status(500).json({ success: false, error: error.message });
         }
     }
-}
+};
 
 module.exports = OrderController; 

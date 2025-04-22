@@ -107,6 +107,7 @@ app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(err.status || 500).render('error', {
         title: 'Error',
+        message: err.message || 'An unexpected error occurred',
         error: err
     });
 });
@@ -115,6 +116,7 @@ app.use((err, req, res, next) => {
 app.use((req, res) => {
     res.status(404).render('error', {
         title: '404 Not Found',
+        message: 'Page not found',
         error: {
             status: 404,
             message: 'Page not found'

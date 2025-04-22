@@ -9,16 +9,19 @@ class CustomerController {
                 include: [
                     {
                         model: CustomerAddress,
+                        as: 'addresses',
                         where: { isDefault: true },
                         required: false
                     },
                     {
                         model: CustomerContact,
+                        as: 'contacts',
                         where: { isPrimary: true },
                         required: false
                     },
                     {
                         model: Order,
+                        as: 'orders',
                         required: false,
                         attributes: ['id', 'totalAmount', 'statusId']
                     }
@@ -49,14 +52,17 @@ class CustomerController {
                 include: [
                     {
                         model: CustomerAddress,
+                        as: 'addresses',
                         required: false
                     },
                     {
                         model: CustomerContact,
+                        as: 'contacts',
                         required: false
                     },
                     {
                         model: Order,
+                        as: 'orders',
                         required: false,
                         include: ['status']
                     }

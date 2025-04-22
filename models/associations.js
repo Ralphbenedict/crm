@@ -20,7 +20,7 @@ function setupAssociations() {
     // Customer - CustomerAddress (One-to-Many)
     Customer.hasMany(CustomerAddress, {
         foreignKey: 'customerId',
-        as: 'CustomerAddresses'
+        as: 'addresses'
     });
     CustomerAddress.belongsTo(Customer, {
         foreignKey: 'customerId',
@@ -30,7 +30,7 @@ function setupAssociations() {
     // Customer - CustomerContact (One-to-Many)
     Customer.hasMany(CustomerContact, {
         foreignKey: 'customerId',
-        as: 'CustomerContacts'
+        as: 'contacts'
     });
     CustomerContact.belongsTo(Customer, {
         foreignKey: 'customerId',
