@@ -16,11 +16,8 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Create order route (with file upload)
-router.post('/', upload.fields([
-    { name: 'proofOfPayment1', maxCount: 1 },
-    { name: 'proofOfPayment2', maxCount: 1 }
-]), OrderController.createOrder);
+// Create order form - must come before /:id routes
+router.get('/create', OrderController.getOrderForm);
 
 // List route
 router.get('/', OrderController.getAllOrders);
@@ -29,8 +26,11 @@ router.get('/', OrderController.getAllOrders);
 router.get('/search', OrderController.searchOrders);
 router.get('/search-suggestions', OrderController.getSearchSuggestions);
 
-// Create order form
-router.get('/create', OrderController.getOrderForm);
+// Create order route (with file upload)
+router.post('/', upload.fields([
+    { name: 'proofOfPayment1', maxCount: 1 },
+    { name: 'proofOfPayment2', maxCount: 1 }
+]), OrderController.createOrder);
 
 // Order details and actions
 router.get('/:id', OrderController.getOrderDetails);

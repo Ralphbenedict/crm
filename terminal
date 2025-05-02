@@ -1,0 +1,5 @@
+# Check if remote is already set up
+git remote -v
+
+# If not set up, add the remote (replace with your actual repository URL)
+git remote add origin https://github.com/yourusername/CRM.git

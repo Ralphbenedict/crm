@@ -1,118 +1,125 @@
 <%- include('../partials/header') %>
 
     <div class="container mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>Customers</h1>
-            <a href="/customers/create" class="btn btn-primary">
-                <i class="bi bi-plus-circle"></i> Add New Customer
-            </a>
-        </div>
-
-        <!-- Search Form -->
-        <div class="card mb-4">
-            <div class="card-body">
-                <form id="customerSearchForm" class="row g-3">
-                    <div class="col-md-8">
-                        <input type="text" class="form-control" id="customerSearch" placeholder="Search customers...">
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" id="searchType">
-                            <option value="name">Search by Name</option>
-                            <option value="tin">Search by TIN</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-search"></i>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Customers Table -->
-        <div class="table-responsive" id="customersTable">
-            <table class="table table-striped table-hover">
-                <thead>
-                    <tr>
-                        <th>Customer Name</th>
-                        <th>TIN</th>
-                        <th>Customer Since</th>
-                        <th>Address</th>
-                        <th>Primary Contact</th>
-                        <th>Orders</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="customersTableBody">
-                    <% if (typeof customers !=='undefined' && customers && customers.length> 0) { %>
-                        <% customers.forEach(function(customer) { %>
-                            <tr>
-                                <td>
-                                    <a href="/customers/<%= customer.id %>">
-                                        <%= customer.name %>
-                                    </a>
-                                </td>
-                                <td>
-                                    <%= customer.tin || 'N/A' %>
-                                </td>
-                                <td>
-                                    <%= new Date(customer.customerSince).toLocaleDateString() %>
-                                </td>
-                                <td>
-                                    <% if (customer.address) { %>
-                                        <%= customer.address.streetAddress %>, <%= customer.address.city %>
-                                                <% } else { %>
-                                                    No address
-                                                    <% } %>
-                                </td>
-                                <td>
-                                    <% if (customer.contact) { %>
-                                        <%= customer.contact.name %><br>
-                                            <%= customer.contact.email || 'No email' %>
-                                                <% } else { %>
-                                                    No contact
-                                                    <% } %>
-                                </td>
-                                <td>
-                                    Total: <%= customer.totalOrders %><br>
-                                        Pending: <%= customer.pendingOrders %>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="/customers/<%= customer.id %>" class="btn btn-sm btn-info">
-                                            <i class="bi bi-eye"></i>
-                                        </a>
-                                        <a href="/customers/<%= customer.id %>/edit" class="btn btn-sm btn-warning">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
-                                        <button type="button" class="btn btn-sm btn-danger delete-customer"
-                                            data-id="<%= customer.id %>">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                            <% }); %>
-                                <% } else { %>
-                                    <tr>
-                                        <td colspan="7" class="text-center">No customers found</td>
-                                    </tr>
-                                    <% } %>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- No Results Message -->
-        <div id="noResultsRow" class="text-center p-4" style="display: none;">
-            <p class="text-muted">No customers found matching your search criteria.</p>
-        </div>
-
-        <% if (typeof customers==='undefined' || !customers || customers.length===0) { %>
-            <div class="text-center p-4">
-                <p class="text-muted">No customers found. Add your first customer to get started!</p>
+        <% if (typeof success !=='undefined' && success) { %>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                <%= success %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
             <% } %>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h1>Customers</h1>
+                    <a href="/customers/create" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add New Customer
+                    </a>
+                </div>
+
+                <!-- Search Form -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form id="customerSearchForm" class="row g-3">
+                            <div class="col-md-8">
+                                <input type="text" class="form-control" id="customerSearch"
+                                    placeholder="Search customers...">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="searchType">
+                                    <option value="name">Search by Name</option>
+                                    <option value="tin">Search by TIN</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Customers Table -->
+                <div class="table-responsive" id="customersTable">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Customer Name</th>
+                                <th>TIN</th>
+                                <th>Customer Since</th>
+                                <th>Address</th>
+                                <th>Primary Contact</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customersTableBody">
+                            <% if (typeof customers !=='undefined' && customers && customers.length> 0) { %>
+                                <% customers.forEach(function(customer) { %>
+                                    <tr>
+                                        <td>
+                                            <a href="/customers/<%= customer._id %>">
+                                                <%= customer.name %>
+                                            </a>
+                                        </td>
+                                        <td>
+                                            <%= customer.tin || 'N/A' %>
+                                        </td>
+                                        <td>
+                                            <%= new Date(customer.createdAt).toLocaleDateString() %>
+                                        </td>
+                                        <td>
+                                            <% if (customer.addresses && customer.addresses.length> 0) { %>
+                                                <%= customer.addresses[0].street %>, <%= customer.addresses[0].city %>,
+                                                        <%= customer.addresses[0].postalCode %>
+                                                            <% } else { %>
+                                                                No address
+                                                                <% } %>
+                                        </td>
+                                        <td>
+                                            <% if (customer.contacts && customer.contacts.length> 0) { %>
+                                                <%= customer.contacts[0].value %>
+                                                    <% } else { %>
+                                                        No contact info
+                                                        <% } %>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success">
+                                                <%= customer.customerType || 'individual' %>
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a href="/customers/<%= customer._id %>/edit"
+                                                    class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-danger delete-customer"
+                                                    data-id="<%= customer._id %>">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                        <% } else { %>
+                                            <tr>
+                                                <td colspan="7" class="text-center">No customers found</td>
+                                            </tr>
+                                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- No Results Message -->
+                <div id="noResultsRow" class="text-center p-4" style="display: none;">
+                    <p class="text-muted">No customers found matching your search criteria.</p>
+                </div>
+
+                <% if (typeof customers==='undefined' || !customers || customers.length===0) { %>
+                    <div class="text-center p-4">
+                        <p class="text-muted">No customers found. Add your first customer to get started!</p>
+                    </div>
+                    <% } %>
     </div>
 
     <%- include('../partials/footer') %>

@@ -8,7 +8,7 @@
                 </h2>
             </div>
             <div class="col-md-4 text-end">
-                <a href="/customers/<%= customer.id %>/edit" class="btn btn-warning">
+                <a href="/customers/<%= customer._id %>/edit" class="btn btn-warning">
                     <i class="bi bi-pencil"></i> Edit Customer
                 </a>
                 <a href="/customers" class="btn btn-outline-secondary">
@@ -35,14 +35,14 @@
                             <tr>
                                 <th>Customer Since:</th>
                                 <td>
-                                    <%= new Date(customer.customerSince).toLocaleDateString() %>
+                                    <%= new Date(customer.createdAt).toLocaleDateString() %>
                                 </td>
                             </tr>
                             <tr>
-                                <th>Status:</th>
+                                <th>Type:</th>
                                 <td>
-                                    <span class="badge bg-<%= customer.status === 'active' ? 'success' : 'danger' %>">
-                                        <%= customer.status %>
+                                    <span class="badge bg-success">
+                                        <%= customer.customerType || 'individual' %>
                                     </span>
                                 </td>
                             </tr>
@@ -56,53 +56,26 @@
                         <h5 class="mb-0">Primary Contact</h5>
                     </div>
                     <div class="card-body">
-                        <% if (customer.CustomerContacts && customer.CustomerContacts.length> 0) { %>
-                            <% const primaryContact=customer.CustomerContacts.find(contact=> contact.isPrimary) %>
-                                <% if (primaryContact) { %>
-                                    <table class="table table-borderless">
-                                        <tr>
-                                            <th>Name:</th>
-                                            <td>
-                                                <%= primaryContact.name %>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Position:</th>
-                                            <td>
-                                                <%= primaryContact.position || 'N/A' %>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Email:</th>
-                                            <td>
-                                                <% if (primaryContact.email) { %>
-                                                    <a href="mailto:<%= primaryContact.email %>">
-                                                        <%= primaryContact.email %>
-                                                    </a>
-                                                    <% } else { %>
-                                                        N/A
-                                                        <% } %>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <th>Phone:</th>
-                                            <td>
-                                                <% if (primaryContact.phone) { %>
-                                                    <a href="tel:<%= primaryContact.phone %>">
-                                                        <%= primaryContact.phone %>
-                                                    </a>
-                                                    <% } else { %>
-                                                        N/A
-                                                        <% } %>
-                                            </td>
-                                        </tr>
-                                    </table>
-                                    <% } else { %>
-                                        <p class="text-muted">No primary contact set</p>
-                                        <% } %>
-                                            <% } else { %>
-                                                <p class="text-muted">No contacts added</p>
-                                                <% } %>
+                        <% if (customer.contacts && customer.contacts.length> 0) { %>
+                            <% const primaryContact=customer.contacts.find(contact=> contact.isDefault) ||
+                                customer.contacts[0] %>
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th>Type:</th>
+                                        <td>
+                                            <%= primaryContact.type %>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>Value:</th>
+                                        <td>
+                                            <%= primaryContact.value %>
+                                        </td>
+                                    </tr>
+                                </table>
+                                <% } else { %>
+                                    <p class="text-muted">No contacts added</p>
+                                    <% } %>
                     </div>
                 </div>
 
@@ -112,21 +85,18 @@
                         <h5 class="mb-0">Default Address</h5>
                     </div>
                     <div class="card-body">
-                        <% if (customer.CustomerAddresses && customer.CustomerAddresses.length> 0) { %>
-                            <% const defaultAddress=customer.CustomerAddresses.find(addr=> addr.isDefault) %>
-                                <% if (defaultAddress) { %>
-                                    <address>
-                                        <%= defaultAddress.streetAddress %><br>
-                                            <%= defaultAddress.city %>, <%= defaultAddress.state %>
-                                                    <%= defaultAddress.postalCode %><br>
-                                                        <%= defaultAddress.country %>
-                                    </address>
-                                    <% } else { %>
-                                        <p class="text-muted">No default address set</p>
-                                        <% } %>
-                                            <% } else { %>
-                                                <p class="text-muted">No addresses added</p>
-                                                <% } %>
+                        <% if (customer.addresses && customer.addresses.length> 0) { %>
+                            <% const defaultAddress=customer.addresses.find(addr=> addr.isDefault) ||
+                                customer.addresses[0] %>
+                                <address>
+                                    <%= defaultAddress.street %><br>
+                                        <%= defaultAddress.city %>, <%= defaultAddress.state %>
+                                                <%= defaultAddress.postalCode %><br>
+                                                    <%= defaultAddress.country %>
+                                </address>
+                                <% } else { %>
+                                    <p class="text-muted">No addresses added</p>
+                                    <% } %>
                     </div>
                 </div>
             </div>
@@ -136,12 +106,12 @@
                 <div class="card shadow-sm">
                     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Orders</h5>
-                        <a href="/orders/create?customerId=<%= customer.id %>" class="btn btn-light btn-sm">
+                        <a href="/orders/create?customerId=<%= customer._id %>" class="btn btn-light btn-sm">
                             <i class="bi bi-plus-circle"></i> New Order
                         </a>
                     </div>
                     <div class="card-body">
-                        <% if (customer.Orders && customer.Orders.length> 0) { %>
+                        <% if (orders && orders.length> 0) { %>
                             <div class="table-responsive">
                                 <table class="table table-hover">
                                     <thead>
@@ -154,7 +124,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <% customer.Orders.forEach(order=> { %>
+                                        <% orders.forEach(order=> { %>
                                             <tr>
                                                 <td>
                                                     <%= order.siNumber %>
@@ -165,16 +135,16 @@
                                                 <td>₱<%= parseFloat(order.totalAmount).toLocaleString() %>
                                                 </td>
                                                 <td>
-                                                    <span class="badge bg-<%= getStatusColor(order.status.name) %>">
-                                                        <%= order.status.name %>
+                                                    <span class="badge bg-<%= getStatusColor(order.status) %>">
+                                                        <%= order.status %>
                                                     </span>
                                                 </td>
                                                 <td>
                                                     <div class="btn-group" role="group">
-                                                        <a href="/orders/<%= order.id %>" class="btn btn-sm btn-info">
+                                                        <a href="/orders/<%= order._id %>" class="btn btn-sm btn-info">
                                                             <i class="bi bi-eye"></i>
                                                         </a>
-                                                        <a href="/orders/<%= order.id %>/edit"
+                                                        <a href="/orders/<%= order._id %>/edit"
                                                             class="btn btn-sm btn-warning">
                                                             <i class="bi bi-pencil"></i>
                                                         </a>
@@ -195,18 +165,3 @@
     </div>
 
     <%- include('../partials/footer') %>
-
-        <script>
-            function getStatusColor(status) {
-                const statusColors = {
-                    'Fully Paid': 'success',
-                    'Paid': 'primary',
-                    'BIR 2307': 'info',
-                    'Unpaid': 'warning',
-                    'Cancelled': 'danger',
-                    'Month': 'secondary',
-                    'Bad Debts': 'dark'
-                };
-                return statusColors[status] || 'secondary';
-            }
-        </script>

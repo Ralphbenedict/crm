@@ -1,9 +1,9 @@
 /**
  * Order Model
- * 
+ *
  * Represents a customer order in the CRM system. This model stores all information
  * related to a customer's order, including payment details, status, and associated files.
- * 
+ *
  * Key features:
  * - Tracks order details (SI number, dates, amounts)
  * - Manages payment status and documentation
@@ -12,99 +12,122 @@
  * - Includes soft delete functionality
  */
 
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Order = sequelize.define('Order', {
-    // Primary key
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-
-    // Sales Invoice number - unique identifier for the order
+const orderSchema = new mongoose.Schema({
     siNumber: {
-        type: DataTypes.STRING,
-        allowNull: false,
+        type: String,
+        required: true,
         unique: true
     },
-
-    // Date when the order was placed
     orderDate: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: DataTypes.NOW
+        type: Date,
+        required: true,
+        default: Date.now
     },
-
-    // Customer information
+    // Reference to Customer model
+    customerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Customer'
+    },
+    // Keep customerName for backward compatibility
     customerName: {
-        type: DataTypes.STRING,
-        allowNull: false
+        type: String,
+        required: true
     },
-
-    // Financial information
     totalAmount: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false,
-        defaultValue: 0
+        type: Number,
+        required: true,
+        default: 0
     },
-
-    // Tax withholding information
     withholdingTax: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: true,
-        defaultValue: 0
+        type: Number,
+        default: 0
     },
-
-    // Date when the invoice was issued
     invoiceDate: {
-        type: DataTypes.DATE,
-        allowNull: true
+        type: Date
     },
-
-    // Reference to the order status
     statusId: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        defaultValue: 'pending',
-        validate: {
-            isIn: [['pending', 'processing', 'completed', 'cancelled']]
+        type: String,
+        enum: ['pending', 'processing', 'completed', 'cancelled'],
+        default: 'pending'
+    },
+    // Add status field for view compatibility
+    status: {
+        type: String,
+        enum: ['pending', 'processing', 'completed', 'cancelled'],
+        default: 'pending'
+    },
+    items: [{
+        name: String,
+        quantity: Number,
+        unitPrice: Number,
+        description: String,
+        material: {
+            type: String,
+            default: 'metal'
+        },
+        thickness: {
+            type: Number,
+            default: 1.0
+        },
+        width: Number,
+        height: Number,
+        area: Number,
+        processType: {
+            type: String,
+            enum: ['laser-cutting', 'laser-engraving'],
+            default: 'laser-cutting'
         }
-    },
-
-    // File paths for proof of payment documents
+    }],
     proofOfPayment1: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: String
     },
-
     proofOfPayment2: {
-        type: DataTypes.STRING,
-        allowNull: true
+        type: String
     },
-
-    // Soft delete support
+    notes: [{
+        content: String,
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
     deletedAt: {
-        type: DataTypes.DATE,
-        allowNull: true
+        type: Date,
+        default: null
     }
 }, {
-    // Model configuration
-    paranoid: true, // Enable soft deletes
-    timestamps: true, // Add createdAt and updatedAt fields
-    indexes: [
-        // Index for faster searches
-        {
-            fields: ['siNumber']
-        },
-        {
-            fields: ['customerName']
-        },
-        {
-            fields: ['statusId']
-        }
-    ]
+    timestamps: true
 });
 
-module.exports = Order; 
+// Create indexes
+orderSchema.index({ siNumber: 1 }, { unique: true });
+orderSchema.index({ customerName: 1 });
+orderSchema.index({ statusId: 1 });
+
+// Update the updatedAt timestamp before saving
+orderSchema.pre('save', function (next) {
+    this.updatedAt = Date.now();
+
+    // Ensure status and statusId are synchronized
+    if (this.statusId && !this.status) {
+        this.status = this.statusId;
+    } else if (this.status && !this.statusId) {
+        this.statusId = this.status;
+    }
+
+    next();
+});
+
+const Order = mongoose.model('Order', orderSchema);
+
+module.exports = Order;

@@ -8,7 +8,7 @@
                         <h4 class="mb-0">Add New Customer</h4>
                     </div>
                     <div class="card-body">
-                        <form action="/customers" method="POST">
+                        <form action="/customers" method="POST" id="customerForm">
                             <!-- Customer Name -->
                             <div class="mb-3">
                                 <label for="name" class="form-label">Customer Name</label>
@@ -18,7 +18,10 @@
                             <!-- TIN -->
                             <div class="mb-3">
                                 <label for="tin" class="form-label">TIN (Tax ID Number)</label>
-                                <input type="text" class="form-control" id="tin" name="tin" placeholder="123-456-789">
+                                <input type="text" class="form-control" id="tin" name="tin"
+                                    placeholder="Format: 123-456-789" pattern="\d{3}-\d{3}-\d{3}"
+                                    title="Please enter TIN in format: XXX-XXX-XXX">
+                                <div class="form-text">Format: XXX-XXX-XXX (e.g., 123-456-789)</div>
                             </div>
 
                             <!-- Phone Number -->
@@ -61,5 +64,49 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tinInput = document.getElementById('tin');
+            const customerForm = document.getElementById('customerForm');
+
+            tinInput.addEventListener('input', function (e) {
+                // Remove all non-digit characters
+                let value = e.target.value.replace(/\D/g, '');
+
+                // Limit to 9 digits
+                if (value.length > 9) {
+                    value = value.substring(0, 9);
+                }
+
+                // Format as XXX-XXX-XXX
+                if (value.length > 0) {
+                    let formattedValue = '';
+
+                    if (value.length <= 3) {
+                        formattedValue = value;
+                    } else if (value.length <= 6) {
+                        formattedValue = value.substring(0, 3) + '-' + value.substring(3);
+                    } else {
+                        formattedValue = value.substring(0, 3) + '-' + value.substring(3, 6) + '-' + value.substring(6);
+                    }
+
+                    e.target.value = formattedValue;
+                }
+            });
+
+            // Add form submission validation
+            customerForm.addEventListener('submit', function (e) {
+                console.log('Form submitted with data:', {
+                    name: document.getElementById('name').value,
+                    tin: document.getElementById('tin').value,
+                    phoneNumber: document.getElementById('phoneNumber').value,
+                    streetAddress: document.getElementById('streetAddress').value,
+                    city: document.getElementById('city').value,
+                    postalCode: document.getElementById('postalCode').value
+                });
+            });
+        });
+    </script>
 
     <%- include('../partials/footer') %>

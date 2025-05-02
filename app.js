@@ -1,29 +1,16 @@
 /**
  * CRM System - Main Application Entry Point
- * 
- * This file initializes and configures the Express.js application, sets up middleware,
- * defines routes, and starts the server. It serves as the central hub for the CRM system.
- * 
- * Key responsibilities:
- * - Application configuration and middleware setup
- * - Route definitions and mounting
- * - Error handling
- * - Database initialization
- * - Static file serving
- * - Server startup
  */
 
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
-const mongoose = require('mongoose');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
-const { connectDB } = require('./config/database');
-const orderRoutes = require('./routes/orderRoutes');
-const CostController = require('./controllers/CostController');
-const CustomerController = require('./controllers/customerController');
-const customerRoutes = require('./routes/customerRoutes');
+const { testConnection } = require('./config/database');
+const authRoutes = require('./routes/authRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 const flash = require('connect-flash');
 
 // Create uploads directory if it doesn't exist
@@ -42,6 +29,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieParser());
 
 // Session middleware
 app.use(session({
@@ -70,13 +58,14 @@ app.use((req, res, next) => {
     next();
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-})
-    .then(() => console.log('MongoDB connection has been established successfully.'))
-    .catch(err => console.error('MongoDB connection error:', err));
+// Test database connection
+testConnection()
+    .then(connected => {
+        if (!connected) {
+            console.error('Database connection failed. Please check your configuration.');
+        }
+    })
+    .catch(err => console.error('Error testing database connection:', err));
 
 // Route Definitions
 
@@ -85,22 +74,9 @@ app.get('/', (req, res) => {
     res.render('index', { title: 'Home' });
 });
 
-// Test route for customers
-app.get('/test-customers', (req, res) => {
-    res.render('customers/index', {
-        title: 'Customers',
-        customers: []
-    });
-});
-
-// Cost Calculation API Routes
-app.post('/api/cost/laser-engraving', CostController.calculateLaserEngraving);
-app.post('/api/cost/laser-cutting', CostController.calculateLaserCutting);
-app.get('/api/materials', CostController.getMaterials);
-
 // Mount route handlers
-app.use('/customers', customerRoutes);
-app.use('/orders', orderRoutes);
+app.use('/auth', authRoutes);
+app.use('/dashboard', dashboardRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

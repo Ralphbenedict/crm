@@ -1,0 +1,56 @@
+<%- include('../partials/header') %>
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar">
+                <%- include('../partials/sidebar') %>
+            </div>
+
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div
+                    class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Dashboard</h1>
+                </div>
+
+                <% if (success && success.length> 0) { %>
+                    <div class="alert alert-success">
+                        <%= success %>
+                    </div>
+                    <% } %>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card mb-4 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Customers</h5>
+                                        <p class="card-text">Manage your customer database</p>
+                                        <a href="/customers" class="btn btn-primary">View Customers</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card mb-4 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Orders</h5>
+                                        <p class="card-text">Track and manage orders</p>
+                                        <a href="/orders" class="btn btn-primary">View Orders</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card mb-4 shadow-sm">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Reports</h5>
+                                        <p class="card-text">Generate and view reports</p>
+                                        <a href="#" class="btn btn-primary">View Reports</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+            </main>
+        </div>
+    </div>
+
+    <%- include('../partials/footer') %>

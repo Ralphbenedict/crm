@@ -1,4 +1,4 @@
-const Customer = require('./Customer');
+const { Customer } = require('./index');
 const CustomerAddress = require('./CustomerAddress');
 const CustomerContact = require('./CustomerContact');
 const Order = require('./Order');

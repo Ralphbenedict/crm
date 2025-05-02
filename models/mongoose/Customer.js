@@ -48,6 +48,9 @@ const customerSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    tin: {
+        type: String
+    },
     company: {
         type: String
     },

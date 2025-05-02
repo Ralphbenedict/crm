@@ -60,10 +60,29 @@ class CustomerController {
             const orders = await Order.find({ customerName: customer.name })
                 .sort('-createdAt');
 
+            // Helper function to get status color
+            const getStatusColor = (status) => {
+                const statusColors = {
+                    'pending': 'warning',
+                    'processing': 'info',
+                    'completed': 'success',
+                    'cancelled': 'danger',
+                    'Fully Paid': 'success',
+                    'Paid': 'primary',
+                    'BIR 2307': 'info',
+                    'Unpaid': 'warning',
+                    'Cancelled': 'danger',
+                    'Month': 'secondary',
+                    'Bad Debts': 'dark'
+                };
+                return statusColors[status] || 'secondary';
+            };
+
             res.render('customers/show', {
                 title: customer.name,
                 customer,
-                orders
+                orders,
+                getStatusColor
             });
         } catch (error) {
             console.error('Error fetching customer:', error);
@@ -454,4 +473,4 @@ class CustomerController {
     }
 }
 
-module.exports = CustomerController; 
+module.exports = CustomerController;

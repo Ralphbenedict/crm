@@ -16,35 +16,47 @@
         <div class="container mt-5">
             <div class="jumbotron">
                 <h1 class="display-4">Welcome to CRM System</h1>
-                <p class="lead">Manage your orders, track customer information, and calculate costs efficiently.</p>
+                <p class="lead">A comprehensive customer relationship management solution for your business.</p>
                 <hr class="my-4">
-                <p>Get started by creating a new order or viewing existing ones.</p>
-                <a class="btn btn-primary btn-lg" href="/orders" role="button">View Orders</a>
-                <a class="btn btn-success btn-lg" href="/orders/create" role="button">Create Order</a>
+                <p>Manage customers, track orders, and grow your business with our powerful tools.</p>
+                <a class="btn btn-primary btn-lg" href="/auth/login" role="button">Get Started</a>
             </div>
 
-            <div class="row mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Order Management</h5>
-                            <p class="card-text">Create, view, and manage orders with ease. Track order status and
-                                customer information.</p>
-                            <a href="/orders" class="btn btn-primary">Manage Orders</a>
+            <% if (success && success.length> 0) { %>
+                <div class="alert alert-success mt-3">
+                    <%= success %>
+                </div>
+                <% } %>
+
+                    <div class="row mt-5">
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Customer Management</h5>
+                                    <p class="card-text">Store and manage customer information, track interactions, and
+                                        build relationships.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Order Tracking</h5>
+                                    <p class="card-text">Create and manage orders, track status, and maintain a complete
+                                        order history.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">Reporting</h5>
+                                    <p class="card-text">Generate insightful reports to analyze your business
+                                        performance and make informed decisions.</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <h5 class="card-title">Cost Calculator</h5>
-                            <p class="card-text">Calculate costs for laser engraving and cutting services. Manage
-                                materials and pricing.</p>
-                            <a href="/cost-calculator" class="btn btn-primary">Calculate Costs</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <%- include('partials/footer') %>
